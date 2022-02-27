@@ -51,34 +51,43 @@ GM_c = (144, 144, 144)   # <- Grid Trim color (144, 144, 144) default
 GB_c = (84, 84, 84)
 
 # Bool
-GameStatus = 1
+Game_Status = 1
 EDITING = 1
 GRID = 1   # <- True by default
 TRIM = 1   # <- True by default
-LogDisabled = 0   # <- True by default
+LOG_DISABLED = 0   # <- False by default
 
 # Int
-STEPS = 0
-FPS = 120   # <- 120 by default
-EditingFPS = 10   # <- 10 by default
-BaseCellSize = 12   # <- 12 by default
-XOffset, YOffset = 2, 2   # <- 2, 2 by default
-CellsWas, CellsLeft, CellsBorn, CellsDied = 0, 0, 0, 0
+Steps = 0
+FPS = 120   # <- default: 120
+EDITING_FPS = 10   # <- default: 10
+BASE_CELL_SIZE = 12   # <- default: 12 by
+X_Offset, Y_Offset = 2, 2   # <- default: 2, 2
+Cells_Was, Cells_Left, Cells_Born, Cells_Died = 0, 0, 0, 0
 
 # Str
-MainGameName = "Game of Life"
+MAIN_GAME_NAME = "Game of Life"
 WDPath = findpath.abspath(findpath.dirname(__file__))
-BaseLogMode = "a"
+BASE_LOG_MODE = "a"   # <- default: "a"
 
 # List
 
 
 # Tuple
-FILETYPES = (("All", "*.*"), ("TXT", "*.txt"), ("CSV", "*.csv"))
-LogModes = ("a", "w", "bw", "ba")
+FILE_TYPES = (("All", "*.*"), ("TXT", "*.txt"), ("CSV", "*.csv"))
+# ^^^ default: ("All", "*.*"), ("TXT", "*.txt"), ("CSV", "*.csv")
+LOG_MODES = ("a", "w", "bw", "ba")   # <- default: ("a", "w", "bw", "ba")
 
 # Dict
-ColorPalette = {"cell_live": BL_c, "cell_dead": WH_c, "grid": GM_c, "trim": GW_c}
+COLOR_PALETTE = {"cell_live": BL_c, "cell_dead": WH_c, "grid": GM_c, "trim": GW_c}
+# ^^^ default: {"cell_live": BL_c, "cell_dead": WH_c, "grid": GM_c, "trim": GW_c}
+KEY_BINDINGS = {"exit": pyg.K_ESCAPE, "start": (pyg.K_KP_ENTER, pyg.K_RETURN), "pause": pyg.K_SPACE,
+                "minus": (pyg.K_MINUS, pyg.K_KP_MINUS), "plus": (pyg.K_PLUS, pyg.K_EQUALS, pyg.K_KP_PLUS),
+                "import": pyg.K_o, "export": pyg.K_s, "grid_switch": pyg.K_g, "trim_switch": pyg.K_t}
+""" ^^^ default: {"exit": pyg.K_ESCAPE, "start": (pyg.K_KP_ENTER, pyg.K_RETURN), "pause": pyg.K_SPACE,
+                "minus": (pyg.K_MINUS, pyg.K_KP_MINUS), "plus": (pyg.K_PLUS, pyg.K_EQUALS, pyg.K_KP_PLUS),
+                "import": pyg.K_o, "export": pyg.K_s, "grid_switch": pyg.K_g, "trim_switch": pyg.K_t}
+"""
 
 # Other
 
@@ -97,22 +106,20 @@ ColorPalette = {"cell_live": BL_c, "cell_dead": WH_c, "grid": GM_c, "trim": GW_c
 
 def log_write(msg:str, log_lvl:int, end_of_msg:str="\n", start_of_msg:str="", zero_log_prefix:str="", between_part:str="   ", log_mode:str="a"):
 
-    if LogDisabled:
+    if LOG_DISABLED:
         return
 
     try:
         # Checks
         if (log_lvl > 60 or log_lvl < 0 or log_lvl % 10 != 0):
             log_lvl = 0
-            with open(f'{WDPath}/Results.log', "a") as log_file:
-                log_write("Invallid Log LVL", 40)
-                log_write("Log LVL switched to: 0", 30)
+            log_write("Invallid Log LVL", 40)
+            log_write("Log LVL switched to: 0", 30)
 
-        if log_mode not in LogModes:
+        if log_mode not in LOG_MODES:
             log_mode = "a"
-            with open(f'{WDPath}/Results.log', "a") as log_file:
-                log_write("Invallid Log mode", 40)
-                log_write("Log mode switched to: 'a'", 30)
+            log_write("Invallid Log mode", 40)
+            log_write("Log mode switched to: 'a'", 30)
 
         switch = {
             0: zero_log_prefix,
@@ -137,23 +144,23 @@ def window_init():
     """
     Creates main display
     """
-    global WINDOW, DispWidth, DispHeight
+    global WINDOW, DISP_WIDTH, DISP_HEIGHT
 
     # Window preset
     try:
-        DispWidth, DispHeight = pyg.display.get_desktop_sizes()[0][0], pyg.display.get_desktop_sizes()[0][1]
+        DISP_WIDTH, DISP_HEIGHT = pyg.display.get_desktop_sizes()[0][0], pyg.display.get_desktop_sizes()[0][1]
     
     except:
         log_write("Display size couldn't executed", 40, start_of_msg="\n")
         log_write("Use default values (1280,1024)", 30, end_of_msg="\n\n")
-        DispWidth, DispHeight = 1280, 1024
+        DISP_WIDTH, DISP_HEIGHT = 1280, 1024
 
-    WINDOW = pyg.display.set_mode((DispWidth, DispHeight), pyg.DOUBLEBUF | pyg.HWSURFACE | pyg.FULLSCREEN |pyg.NOFRAME)
-    pyg.display.set_caption("Conways "+ MainGameName)
+    WINDOW = pyg.display.set_mode((DISP_WIDTH, DISP_HEIGHT), pyg.DOUBLEBUF | pyg.HWSURFACE | pyg.FULLSCREEN |pyg.NOFRAME)
+    pyg.display.set_caption("Conways "+ MAIN_GAME_NAME)
     pyg.display.set_icon(pyg.image.load(f'{WDPath}/GofL_logo.png', "Game_logo"))
 
     # Grid creation
-    build_grid(BaseCellSize, XOffset, YOffset)
+    build_grid(BASE_CELL_SIZE, X_Offset, Y_Offset)
 
 
 def build_grid(cell_size:int, x_offset:int, y_offset:int):
@@ -164,16 +171,16 @@ def build_grid(cell_size:int, x_offset:int, y_offset:int):
     :param x_offset: offset pixels from the left corner
     :param y_offset: offset pixels from the top corner
     """
-    global GRID, TRIM, xCells, yCells, XOffset, YOffset, CellsArray, CellSize, TileSize
+    global GRID, TRIM, X_CELLS, Y_CELLS, X_Offset, Y_Offset, Cells_Array, CELL_SIZE, TILE_SISE
 
-    WINDOW.fill(ColorPalette['grid'])
+    WINDOW.fill(COLOR_PALETTE['grid'])
     GRID, TRIM = 1, 1
-    CellSize = cell_size
-    TileSize = CellSize + 1
-    xCells = (DispWidth -x_offset) // TileSize
-    yCells = (DispHeight -y_offset) // TileSize
-    XOffset, YOffset = x_offset, y_offset
-    CellsArray = numpy.zeros((yCells, xCells), dtype=numpy.uint8)
+    CELL_SIZE = cell_size
+    TILE_SISE = CELL_SIZE + 1
+    X_CELLS = (DISP_WIDTH -x_offset) // TILE_SISE
+    Y_CELLS = (DISP_HEIGHT -y_offset) // TILE_SISE
+    X_Offset, Y_Offset = x_offset, y_offset
+    Cells_Array = numpy.zeros((Y_CELLS, X_CELLS), dtype=numpy.uint8)
 
     print_frame()
 
@@ -183,9 +190,9 @@ def print_frame():
     Prints all cells on screen
     """
 
-    for y in range(yCells):
-        for x in range(xCells):
-            print_cell(x, y, CellsArray[y, x])
+    for y in range(Y_CELLS):
+        for x in range(X_CELLS):
+            print_cell(x, y, Cells_Array[y, x])
 
     pyg.display.update()
 
@@ -193,22 +200,22 @@ def print_frame():
 def print_cell(x:int, y:int, st:int):
     """
     Prints only one cell
-    :param x: x of cell in CellsArray
-    :param y: y of cell in CellsArray
+    :param x: x of cell in Cells_Array
+    :param y: y of cell in Cells_Array
     :param st: state for cell
     """
 
-    rect = ((x * TileSize) +XOffset, (y * TileSize) +YOffset, CellSize, CellSize)
+    rect = ((x * TILE_SISE) +X_Offset, (y * TILE_SISE) +Y_Offset, CELL_SIZE, CELL_SIZE)
 
     if st == 1:
-        pyg.draw.rect(WINDOW, ColorPalette['cell_live'], rect)
+        pyg.draw.rect(WINDOW, COLOR_PALETTE['cell_live'], rect)
     elif st == 2 and TRIM:
-        pyg.draw.rect(WINDOW, ColorPalette['trim'], rect)
+        pyg.draw.rect(WINDOW, COLOR_PALETTE['trim'], rect)
     else:
-        pyg.draw.rect(WINDOW, ColorPalette['cell_dead'], rect)
+        pyg.draw.rect(WINDOW, COLOR_PALETTE['cell_dead'], rect)
 
 
-def set_cell(mouse_x:int, mouse_y:int, mode:int):
+def set_cell(mouse_x:int, mouse_y:int, mode:bool):
     """
     If cell is dead -> makes it alive
     Elif cell is alive -> makes it dead
@@ -216,22 +223,22 @@ def set_cell(mouse_x:int, mouse_y:int, mode:int):
     :param m_y: y of mouse position
     :param mode: mode of painting
     """
-    global CellsWas, CellsArray
+    global Cells_Was, Cells_Array
 
-    x = mouse_x // TileSize
-    y = mouse_y // TileSize
+    x = mouse_x // TILE_SISE
+    y = mouse_y // TILE_SISE
 
     try:
-        CellsArray[y, x]
+        Cells_Array[y, x]
 
-        if not(CellsArray[y, x]) and mode:
-            CellsArray[y, x] = 1
-            CellsWas += 1
+        if not(Cells_Array[y, x]) and mode:
+            Cells_Array[y, x] = 1
+            Cells_Was += 1
             print_cell(x, y, 1)
 
-        elif CellsArray[y, x] and not(mode):
-            CellsArray[y, x] = 0
-            CellsWas -= 1
+        elif Cells_Array[y, x] and not(mode):
+            Cells_Array[y, x] = 0
+            Cells_Was -= 1
             print_cell(x, y, 0)
 
     except:
@@ -243,20 +250,20 @@ def import_file():
     Imports preset file and creates a new list of cells
     Prints all cells
     """
-    global CellsArray, CellsWas, CellsLeft, XOffset, YOffset
+    global Cells_Array, Cells_Was, Cells_Left, X_Offset, Y_Offset
 
     try:
         log_write("Trying to load a preset file...", 30)
 
-        with fd.askopenfile("r", title="Import a file", initialfile="GofL_preset.csv", initialdir=WDPath, filetypes=FILETYPES) as preset_file:
+        with fd.askopenfile("r", title="Import a file", initialfile="GofL_preset.csv", initialdir=WDPath, FILE_TYPES=FILE_TYPES) as preset_file:
             preset_file.seek(0)
 
             meta_data = (preset_file.readline().removesuffix("\n")).split(",")
             build_grid(int(meta_data[0]), int(meta_data[1]), int(meta_data[2]))
 
-            CellsArray = numpy.genfromtxt(preset_file, dtype=numpy.uint8, delimiter=",", skip_header=0, encoding="UTF-8")
-            CellsWas = numpy.count_nonzero(CellsArray == 1)
-            CellsLeft = CellsWas
+            Cells_Array = numpy.genfromtxt(preset_file, dtype=numpy.uint8, delimiter=",", skip_header=0, encoding="UTF-8")
+            Cells_Was = numpy.count_nonzero(Cells_Array == 1)
+            Cells_Left = Cells_Was
 
         print_frame()
         log_write("Preset file successful imported", 20, end_of_msg="\n\n")
@@ -273,11 +280,11 @@ def export_file():
     try:
         log_write("Trying to export a preset file...", 30)
 
-        with fd.asksaveasfile("w", title="Export a file", initialfile="GofL_preset.csv", initialdir=WDPath, filetypes=FILETYPES) as preset_file:
+        with fd.asksaveasfile("w", title="Export a file", initialfile="GofL_preset.csv", initialdir=WDPath, FILE_TYPES=FILE_TYPES) as preset_file:
             preset_file.seek(0)
 
-            preset_file.write(f"{CellSize},{XOffset},{YOffset}")
-            [preset_file.write(f'\n{",".join(list(map(lambda c: str(c), cells_row)))}') for cells_row in CellsArray.tolist()]
+            preset_file.write(f"{CELL_SIZE},{X_Offset},{Y_Offset}")
+            [preset_file.write(f'\n{",".join(list(map(lambda c: str(c), cells_row)))}') for cells_row in Cells_Array.tolist()]
 
         log_write("Preset file successful exported", 20, end_of_msg="\n\n")
 
@@ -302,17 +309,17 @@ def neighbors_check(old_cells_list, new_cell_list, CLeft:int, CBorn:int, CDied:i
 
     draw_list = []
 
-    for y in range(yCells):
-        for x in range(xCells):
+    for y in range(Y_CELLS):
+        for x in range(X_CELLS):
 
             # Nearby cells inside 3x3 radius
             counter = 0
 
             for neighbor_cell_y in (y - 1, y, y + 1):
-                if (neighbor_cell_y >= 0) and (neighbor_cell_y < yCells):
+                if (neighbor_cell_y >= 0) and (neighbor_cell_y < Y_CELLS):
 
                     for neighbor_cell_x in (x - 1, x, x + 1):
-                        if (neighbor_cell_x >= 0) and (neighbor_cell_x < xCells):
+                        if (neighbor_cell_x >= 0) and (neighbor_cell_x < X_CELLS):
 
                             if old_cells_list[neighbor_cell_y, neighbor_cell_x] == 1:
                                 counter += 1
@@ -365,25 +372,25 @@ def global_events_check(event):
     ElIf =Ctrl-T= hotkey has been pressed -> to switch TRIM
     """
 
-    global GameStatus, GRID, TRIM, EDITING, CellsLeft, FPS
+    global Game_Status, GRID, TRIM, EDITING, Cells_Left, FPS
 
     #  Hot keys  #
     if event.type == pyg.KEYDOWN:
         # End
-        if event.key == pyg.K_ESCAPE:
-            GameStatus = 0
+        if event.key == KEY_BINDINGS['exit']:
+            Game_Status = 0
 
         #  Start simulation
-        elif EDITING and event.type == pyg.KEYDOWN and (event.key == pyg.K_KP_ENTER or event.key == pyg.K_RETURN):
+        elif event.key in KEY_BINDINGS['start'] and EDITING:
             EDITING = 0
-            CellsLeft = CellsWas
-            pyg.display.set_caption(f"{MainGameName} - View mode")
+            Cells_Left = Cells_Was
+            pyg.display.set_caption(f"{MAIN_GAME_NAME} - View mode")
 
 
         # Pause
-        elif event.key == pyg.K_SPACE and not(EDITING):
+        elif event.key == KEY_BINDINGS['pause'] and not(EDITING):
 
-            log_write(f"Paused!    Step: {STEPS}", 20)
+            log_write(f"Paused!    Step: {Steps}", 20)
             
             pyg.display.set_caption(f"{str(pyg.display.get_caption()[0])} (Paused)")
             PAUSED = 1
@@ -391,18 +398,18 @@ def global_events_check(event):
             while PAUSED:
                 for even in pyg.event.get():
                     if even.type == pyg.KEYDOWN:
-                        if even.key == pyg.K_SPACE:
-                            GameStatus = 1
+                        if even.key == KEY_BINDINGS['pause']:
+                            Game_Status = 1
                             PAUSED = 0 
-                        elif even.key == pyg.K_ESCAPE:
-                            GameStatus = 0
+                        elif even.key == KEY_BINDINGS['exit']:
+                            Game_Status = 0
                             PAUSED = 0
 
                     elif even.type == pyg.QUIT:
-                        GameStatus = 0
+                        Game_Status = 0
                         PAUSED = 0
 
-                clock.tick(EditingFPS)
+                clock.tick(EDITING_FPS)
 
             log_write("Not Paused", 20)
 
@@ -410,42 +417,42 @@ def global_events_check(event):
 
 
         # Speed Up / Down
-        elif (event.key == pyg.K_KP_MINUS) or (event.key == pyg.K_MINUS):
+        elif event.key in KEY_BINDINGS['minus']:
             FPS -= 5
             if FPS < 5:
                 FPS = 1
 
-        elif ((event.key == pyg.K_KP_PLUS) or (event.key == pyg.K_PLUS) or (event.key == pyg.K_EQUALS)) and FPS < 255:
+        elif event.key in KEY_BINDINGS['plus'] and FPS < 255:
             FPS += 4 if FPS == 1 else 5
 
 
         # Import / Export file
         elif pyg.KMOD_CTRL:
-            if event.key == pyg.K_o and EDITING:
+            if event.key == KEY_BINDINGS['import'] and EDITING:
                 import_file()
 
-            elif event.key == pyg.K_s and EDITING:
+            elif event.key == KEY_BINDINGS['export'] and EDITING:
                 export_file()
 
 
             # GRID switch
-            elif event.key == pyg.K_g:
-                GRID = not(GRID)
-                WINDOW.fill(ColorPalette['grid'] if GRID else ColorPalette['cell_dead'])
+            elif event.key == KEY_BINDINGS['grid_switch']:
+                GRID = not GRID
+                WINDOW.fill(COLOR_PALETTE['grid'] if GRID else COLOR_PALETTE['cell_dead'])
 
-                log_write(f"Grid: {GRID}\tStep: {STEPS}", 20)
+                log_write(f"Grid: {GRID}\tStep: {Steps}", 20)
                 print_frame()
 
 
             # TRIM switch
-            elif event.key == pyg.K_t and not(EDITING):
-                TRIM = not(TRIM)
+            elif event.key == KEY_BINDINGS['trim_switch'] and not(EDITING):
+                TRIM = not TRIM
                 print_frame()
 
-                log_write(f"Trim: {TRIM}\tStep: {STEPS}", 20)
+                log_write(f"Trim: {TRIM}\tStep: {Steps}", 20)
 
     elif event.type == pyg.QUIT:
-        GameStatus = 0
+        Game_Status = 0
 
 
 #=-   ---===---   -=#
@@ -456,15 +463,15 @@ def global_events_check(event):
 #=-   MAIN LOOPS   -=#
 if __name__ == "__main__":
 
-    log_write(f"-Results of simulation (Date: {asctime()})-", 30, end_of_msg="\n\n", start_of_msg="\n", log_mode=BaseLogMode)
+    log_write(f"-Results of simulation (Date: {asctime()})-", 30, end_of_msg="\n\n", start_of_msg="\n", log_mode=BASE_LOG_MODE)
 
     window_init()
     clock = pyg.time.Clock()
-    pyg.display.set_caption(f"{MainGameName} - Edit mode")
+    pyg.display.set_caption(f"{MAIN_GAME_NAME} - Edit mode")
 
     #  Editing process  #
 
-    while GameStatus and EDITING:
+    while Game_Status and EDITING:
 
         # Check game status
         for event in pyg.event.get():
@@ -475,9 +482,9 @@ if __name__ == "__main__":
                 PAINTING = 1
 
                 try:
-                    x = pyg.mouse.get_pos()[0] // TileSize
-                    y = pyg.mouse.get_pos()[1] // TileSize
-                    mode = 0 if CellsArray[y, x] else 1
+                    x = pyg.mouse.get_pos()[0] // TILE_SISE
+                    y = pyg.mouse.get_pos()[1] // TILE_SISE
+                    mode = 0 if Cells_Array[y, x] else 1
 
                 except:
                     log_write(f"Failed to set painting mode", 40)
@@ -496,30 +503,30 @@ if __name__ == "__main__":
                     set_cell(pyg.mouse.get_pos()[0], pyg.mouse.get_pos()[1], mode)
                     pyg.display.update()
 
-        clock.tick(EditingFPS)
+        clock.tick(EDITING_FPS)
 
 
     #  Simulation process  #
 
-    while GameStatus and CellsLeft > 0:
+    while Game_Status and Cells_Left > 0:
 
         # Check game status
         for evn in pyg.event.get():
             global_events_check(evn)
 
         # Check neighbors and create new real live list
-        CellsArray, CellsToDraw, CellsLeft, CellsBorn, CellsDied = neighbors_check(CellsArray, numpy.copy(CellsArray), CellsLeft, CellsBorn, CellsDied)
+        Cells_Array, CellsToDraw, Cells_Left, Cells_Born, Cells_Died = neighbors_check(Cells_Array, numpy.copy(Cells_Array), Cells_Left, Cells_Born, Cells_Died)
 
         [print_cell(c_x, c_y, st) for c_x, c_y, st in CellsToDraw]
         pyg.display.update()
 
-        STEPS += 1
+        Steps += 1
         clock.tick(FPS)
 
     #   --=--   #
     #
 
-    if not(CellsLeft):
+    if not(Cells_Left):
         log_write(f"Cells are over ", 30, end_of_msg="\n", start_of_msg="\n")
         sleep(0.5)
 
@@ -530,8 +537,8 @@ if __name__ == "__main__":
 #####
 #####   END   #
 
-    log_write(f"Steps     : {STEPS}\nCells was : {CellsWas}\nCells left: {CellsLeft}"
-              f"\nCells all : {CellsBorn + CellsWas}\nCells born: {CellsBorn}\nCells died: {CellsDied}",
+    log_write(f"Steps     : {Steps}\nCells was : {Cells_Was}\nCells left: {Cells_Left}"
+              f"\nCells all : {Cells_Born + Cells_Was}\nCells born: {Cells_Born}\nCells died: {Cells_Died}",
               0, end_of_msg="\n\n\n", start_of_msg="\n\n", zero_log_prefix="", between_part="")
 
     exit()
