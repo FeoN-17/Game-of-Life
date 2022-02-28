@@ -25,13 +25,14 @@ pyg.init()
 #=-   My Logging Levels   -=#
 """
 
-   QUESTIONS=60    -?-   {msg}   -?-
+    ZERO_LVL=0    {user_input}   {msg}   {user_input}
+    DEBUG=10               -_-   {msg}   -_-
+    INFO=20                ---   {msg}   ---
+    WARN=30                -=-   {msg}   -=-
+    ERROR=40               -!-   {msg}   -!-
+    CRITICAL=50            !!!   {msg}   !!!
 
-   DEBUG=10    -_-   {msg}   -_-
-   INFO=20    ---   {msg}   ---
-   WARN=30    -=-   {msg}   -=-
-   ERROR=40    -!-   {msg}   -!-
-   CRITICAL=50    !!!   {msg}   !!!
+    QUESTIONS=60           -?-   {msg}   -?-
 
 """
 #=-   ---===---   -=#
@@ -59,11 +60,14 @@ LOG_DISABLED = 0   # <- False by default
 
 # Int
 Steps = 0
-FPS = 120   # <- default: 120
+FPS = 60   # <- default: 60
 EDITING_FPS = 10   # <- default: 10
 BASE_CELL_SIZE = 12   # <- default: 12 by
 X_Offset, Y_Offset = 2, 2   # <- default: 2, 2
 Cells_Was, Cells_Left, Cells_Born, Cells_Died = 0, 0, 0, 0
+FPS_REDUCE_STEP, FPS_RAISE_STEP = 5, 5   # default: 5, 5
+FPS_MIN, FPS_MAX = 5, 255   # default: 5, 255
+LOG_MIN_LVL = -1   # default: -1 (without minimal log_lvl)
 
 # Str
 MAIN_GAME_NAME = "Game of Life"
@@ -106,7 +110,7 @@ KEY_BINDINGS = {"exit": pyg.K_ESCAPE, "start": (pyg.K_KP_ENTER, pyg.K_RETURN), "
 
 def log_write(msg:str, log_lvl:int, end_of_msg:str="\n", start_of_msg:str="", zero_log_prefix:str="", between_part:str="   ", log_mode:str="a"):
 
-    if LOG_DISABLED:
+    if LOG_DISABLED or log_lvl <= LOG_MIN_LVL:
         return
 
     try:
@@ -151,8 +155,8 @@ def window_init():
         DISP_WIDTH, DISP_HEIGHT = pyg.display.get_desktop_sizes()[0][0], pyg.display.get_desktop_sizes()[0][1]
     
     except:
-        log_write("Display size couldn't executed", 40, start_of_msg="\n")
-        log_write("Use default values (1280,1024)", 30, end_of_msg="\n\n")
+        log_write("Failed to get Display Size", 40, start_of_msg="\n")
+        log_write("Use default values (1280, 1024)", 30, end_of_msg="\n\n")
         DISP_WIDTH, DISP_HEIGHT = 1280, 1024
 
     WINDOW = pyg.display.set_mode((DISP_WIDTH, DISP_HEIGHT), pyg.DOUBLEBUF | pyg.HWSURFACE | pyg.FULLSCREEN |pyg.NOFRAME)
@@ -209,7 +213,7 @@ def print_cell(x:int, y:int, st:int):
 
     if st == 1:
         pyg.draw.rect(WINDOW, COLOR_PALETTE['cell_live'], rect)
-    elif st == 2 and TRIM:
+    elif TRIM and st == 2:
         pyg.draw.rect(WINDOW, COLOR_PALETTE['trim'], rect)
     else:
         pyg.draw.rect(WINDOW, COLOR_PALETTE['cell_dead'], rect)
@@ -231,12 +235,12 @@ def set_cell(mouse_x:int, mouse_y:int, mode:bool):
     try:
         Cells_Array[y, x]
 
-        if not(Cells_Array[y, x]) and mode:
+        if mode and not(Cells_Array[y, x]):
             Cells_Array[y, x] = 1
             Cells_Was += 1
             print_cell(x, y, 1)
 
-        elif Cells_Array[y, x] and not(mode):
+        elif not mode and Cells_Array[y, x]:
             Cells_Array[y, x] = 0
             Cells_Was -= 1
             print_cell(x, y, 0)
@@ -253,9 +257,9 @@ def import_file():
     global Cells_Array, Cells_Was, Cells_Left, X_Offset, Y_Offset
 
     try:
-        log_write("Trying to load a preset file...", 30)
+        log_write("Trying to load a preset file...", 10)
 
-        with fd.askopenfile("r", title="Import a file", initialfile="GofL_preset.csv", initialdir=WDPath, FILE_TYPES=FILE_TYPES) as preset_file:
+        with fd.askopenfile("r", title="Import a file", initialfile="GofL_preset.csv", initialdir=WDPath, filetypes=FILE_TYPES) as preset_file:
             preset_file.seek(0)
 
             meta_data = (preset_file.readline().removesuffix("\n")).split(",")
@@ -278,9 +282,9 @@ def export_file():
     """
 
     try:
-        log_write("Trying to export a preset file...", 30)
+        log_write("Trying to export a preset file...", 10)
 
-        with fd.asksaveasfile("w", title="Export a file", initialfile="GofL_preset.csv", initialdir=WDPath, FILE_TYPES=FILE_TYPES) as preset_file:
+        with fd.asksaveasfile("w", title="Export a file", initialfile="GofL_preset.csv", initialdir=WDPath, filetypes=FILE_TYPES) as preset_file:
             preset_file.seek(0)
 
             preset_file.write(f"{CELL_SIZE},{X_Offset},{Y_Offset}")
@@ -381,14 +385,14 @@ def global_events_check(event):
             Game_Status = 0
 
         #  Start simulation
-        elif event.key in KEY_BINDINGS['start'] and EDITING:
+        elif EDITING and event.key in KEY_BINDINGS['start']:
             EDITING = 0
             Cells_Left = Cells_Was
             pyg.display.set_caption(f"{MAIN_GAME_NAME} - View mode")
 
 
         # Pause
-        elif event.key == KEY_BINDINGS['pause'] and not(EDITING):
+        elif not EDITING and event.key == KEY_BINDINGS['pause']:
 
             log_write(f"Paused!    Step: {Steps}", 20)
             
@@ -418,20 +422,26 @@ def global_events_check(event):
 
         # Speed Up / Down
         elif event.key in KEY_BINDINGS['minus']:
-            FPS -= 5
-            if FPS < 5:
+            FPS -= FPS_REDUCE_STEP
+            if FPS < FPS_MIN:
+                log_write("Min FPS limit reached", 10)
                 FPS = 1
 
-        elif event.key in KEY_BINDINGS['plus'] and FPS < 255:
-            FPS += 4 if FPS == 1 else 5
+        elif event.key in KEY_BINDINGS['plus']:
+            FPS += FPS_RAISE_STEP
+            if FPS > FPS_MAX:
+                log_write("Max FPS limit reached", 10)
+                FPS = FPS_MAX
+            elif FPS == FPS_RAISE_STEP+1:
+                FPS = FPS_RAISE_STEP
 
 
         # Import / Export file
         elif pyg.KMOD_CTRL:
-            if event.key == KEY_BINDINGS['import'] and EDITING:
+            if EDITING and event.key == KEY_BINDINGS['import']:
                 import_file()
 
-            elif event.key == KEY_BINDINGS['export'] and EDITING:
+            elif EDITING and event.key == KEY_BINDINGS['export']:
                 export_file()
 
 
@@ -445,7 +455,7 @@ def global_events_check(event):
 
 
             # TRIM switch
-            elif event.key == KEY_BINDINGS['trim_switch'] and not(EDITING):
+            elif not EDITING and event.key == KEY_BINDINGS['trim_switch']:
                 TRIM = not TRIM
                 print_frame()
 
@@ -463,7 +473,7 @@ def global_events_check(event):
 #=-   MAIN LOOPS   -=#
 if __name__ == "__main__":
 
-    log_write(f"-Results of simulation (Date: {asctime()})-", 30, end_of_msg="\n\n", start_of_msg="\n", log_mode=BASE_LOG_MODE)
+    log_write(f"-Results (Date: {asctime()})-", 30, end_of_msg="\n\n", start_of_msg="\n", log_mode=BASE_LOG_MODE)
 
     window_init()
     clock = pyg.time.Clock()
