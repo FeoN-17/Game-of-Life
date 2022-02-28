@@ -1,0 +1,9 @@
+# Pycache
+__pycache__/
+
+# Logs ignore
+*.log
+
+# Tests
+*_test.py
+*_unittest.py

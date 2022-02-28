@@ -1,8 +1,12 @@
-## Conway's Game of Life in Python
+<h1 align="center"> Conway's Game of Life in Python </h1>
 
-![LOGO](./GofL_logo.png)
+<img title="Game-of-Life" alt="LOGO" src='GofL_logo.png' align="center"/>
 
 #### The Game of Life, is a [cellular automaton](https://en.wikipedia.org/wiki/Cellular_automaton) devised by the British [mathematician](https://en.wikipedia.org/wiki/Mathematician) [John Horton Conway](https://en.wikipedia.org/wiki/John_Horton_Conway) in 1970. It is a [zero-player game](https://en.wikipedia.org/wiki/Zero-player_game), meaning that its evolution is determined by its initial state, requiring no further input. One interacts with the Game of Life by creating an initial configuration and observing how it evolves. It is [Turing complete](https://en.wikipedia.org/wiki/Turing_complete) and can simulate a [universal constructor](https://en.wikipedia.org/wiki/Von_Neumann_universal_constructor) or any other [Turing machine](https://en.wikipedia.org/wiki/Turing_machine).
+
+#### Now on Python! I hope you will use this program for data and/or computer science or just for fun!
+
+
 
 
 
@@ -16,7 +20,9 @@
 
 
 
-### PACKAGES
+
+
+### [PACKAGES](./requirements/)
 
 * Python >= 3.10.2, < 3.11
 * Pygame >= 2.1.2
@@ -26,11 +32,25 @@
 
 
 
+For pip install packages from [file](requirements/oip_deps.txt)
+
+`pip install --upgrade -r ./requirements/pip_deps.txt`
+
+For poetry copy [`pyproject.toml`](requirements/pyproject.toml) to env
+
+`poetry update`
+
+
+
+
+
 ### RUN
 
-Just run file using Python 3
+#### Just run with Python3
 
 `python3 GofL.py`
+
+
 
 
 
@@ -44,6 +64,8 @@ Just run file using Python 3
 #### Else if cell is dead:
  * Has 3 live neighbors -> cell will be become alive
  * Else -> cell is staying dead
+
+
 
 
 
@@ -75,11 +97,13 @@ Just run file using Python 3
 
 
 
+
+
 ### FEATURES
 
 * #### Save / Load preset files
 * #### Raise / Reduce speed of simulation
-* #### Editable color palette
+* #### Many editable elements in code (colors, keybindings)
 * #### Painting mode
 * #### Logging
 * #### High performance using [Numba](https://numba.pydata.org/), machine code
