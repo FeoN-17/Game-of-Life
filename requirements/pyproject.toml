@@ -7,10 +7,10 @@ license = "Public Domain"
 
 [tool.poetry.dependencies]
 python = ">=3.10.2,<3.11"
-pygame = "^2.1.2"
-numba = "^0.55.1"
+pygame = ">=2.1.2"
+numba = ">=0.55.1"
 numpy = ">=1.21.5,<1.22"
-tk = "^0.1.0"
+tk = ">=0.1.0"
 
 [tool.poetry.dev-dependencies]
 
